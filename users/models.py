@@ -9,7 +9,7 @@ class User(models.Model):
     agreement  = models.BooleanField(default = False)
     point      = models.DecimalField(max_digits = 10, decimal_places = 2, default=0)
     kakao_id   = models.CharField(max_length = 45)
-    userlevel  = models.OneToOneField('UserLevel', on_delete = models.CASCADE)
+    userlevel  = models.ForeignKey('UserLevel', on_delete = models.CASCADE)
 
     class Meta:
         db_table = 'users'
