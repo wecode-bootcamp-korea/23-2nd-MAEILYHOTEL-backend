@@ -1,8 +1,61 @@
+from datetime import datetime
+
 from django.views     import View
 from django.http      import JsonResponse
-from django.db.models import Sum
+from django.db.models import Q, F, Count, Sum, Min, Case, When, Subquery, OuterRef
 
 from stays.models    import Staytype, RoomOption
+
+
+class StaytypeListView(View):
+    def get(self, request):
+        category_id = request.GET.get('category', None)
+        location    = request.GET.get('location', None)
+        check_in    = request.GET.get('CheckIn', None)
+        check_out   = request.GET.get('CheckOut', None)
+
+        if not (check_in and check_out):
+            return JsonResponse({"message":"INVALID_DATE"}, status = 400)
+
+        check_in  = datetime.strptime(check_in, '%Y-%m-%d')
+        check_out = datetime.strptime(check_out, '%Y-%m-%d')
+
+        q = Q()
+
+        if category_id:
+            q &= Q(category = category_id) 
+
+        if location:
+            q &= Q(address__icontains = location) 
+
+        stays = Staytype.objects.filter(q)
+
+        if check_in and check_out:
+            q1 = Q(room__book__check_in__range = [check_in, check_out])
+            q2 = Q(room__book__check_out__range = [check_in, check_out])
+            q3 = Q(room__book__check_in__lte = check_in, room__book__check_out__gte = check_out)
+
+            stays = Staytype.objects.filter(q).prefetch_related('room_set', 'room_set__book_set').annotate(
+                total_room_count = Sum('room__quantity'), 
+                booked_room_count = Subquery(
+                    Staytype.objects.annotate(booked_count = Count('room__book__id', filter = (q1|q2|q3))).filter(pk = OuterRef('pk')).values('booked_count')
+                    ), 
+                    is_available = Case(
+                        When(total_room_count__gt = F('booked_room_count'), then = True), 
+                        default = False
+                    )
+            ).exclude(is_available = False)   
+        
+        response = {
+                "staylist" : [{
+                    "id"        : stay.id,
+                    "name"      : stay.name,
+                    "image_url" : stay.staytypeimage_set.all()[0].image_url,
+                    "price"     : int(RoomOption.objects.filter(room__staytype__id = stay.id).aggregate(price=Min('price'))['price'])
+                } for stay in stays]
+            }
+        
+        return JsonResponse(response, status = 200)
 
 class StayView(View):
     def get(self, request, stay_id):
