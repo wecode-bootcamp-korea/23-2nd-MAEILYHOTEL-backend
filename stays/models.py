@@ -1,4 +1,5 @@
 from django.db import models
+
 from datetime import datetime, timedelta
 
 WEEK = ['월','화','수','목','금','토','일']

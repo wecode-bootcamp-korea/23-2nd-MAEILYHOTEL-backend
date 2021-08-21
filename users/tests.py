@@ -1,7 +1,5 @@
 import json, jwt
 
-from django.http.response import JsonResponse
-
 from users.models     import User, UserLevel
 
 from django.test   import TestCase, Client

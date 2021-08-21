@@ -1,3 +1,4 @@
+
 import jwt
 
 from django.test import TestCase, Client
@@ -66,3 +67,104 @@ class BookListsTest(TestCase):
                         "room_name": "Aroom",
                         "check_in" : "2021-08-01",
                         "check_out": "2021-08-03"}])
+
+class BooksTest(TestCase):
+    def setUp(self):
+        category = Category.objects.create(id = 1, name="호텔")
+        staytype = Staytype.objects.create(
+                id          = 1,
+                name        = "강릉호텔",
+                address     = "강원도 강릉시 강릉동 1-1",
+                longitude   = 12.345,
+                latitude    = 12.345,
+                description = "강릉강릉",
+                category    = category
+            )        
+        room =  Room.objects.create(
+                id        = 1,
+                name      = "스위트룸",
+                quantity  = 4,
+                image_url = "url",
+                people    = 2,
+                staytype  = staytype
+            )
+        
+        RoomOption.objects.create(
+                id        = 1,
+                name      = "숙박",
+                price     = 100000,
+                check_in  = time(15,00),
+                check_out = time(12,00),
+                room      = room
+            )
+        userlevel = UserLevel.objects.create(name='silver', discount=0)
+        user = User.objects.create(
+                    id        = 1,
+                    kakao_id  = 12341234,
+                    email     = 'email',
+                    nickname  = 'nickname',
+                    point     = 1000000,
+                    userlevel = userlevel)
+        self.token = jwt.encode({"id" : user.id}, SECRET_KEY, algorithm = 'HS256')
+
+    def tearDown(self):
+        User.objects.all().delete()
+        UserLevel.objects.all().delete()
+        RoomOption.objects.all().delete()
+        Room.objects.all().delete()
+        Staytype.objects.all().delete()
+        Category.objects.all().delete()
+
+    def test_books_and_payment_post_success(self):
+        body = {
+            'CheckIn'   : '2021-08-24',
+            'CheckOut'  : '2021-08-25',
+            'RoomOption': '숙박',
+            'Room'      : 1,
+            'Price'     : 116000
+        }
+        headers = {"HTTP_Authorization": self.token}
+        client = Client()
+        response = client.post('/books', json.dumps(body), content_type='application/json', **headers)
+        self.assertEqual(response.status_code, 201)
+    
+    def test_books_and_payment_invalid_date_failed(self):
+        body = {
+            'CheckIn'   : '2021-08-25',
+            'CheckOut'  : '2021-07-21',
+            'RoomOption': '숙박',
+            'Room'      : 1,
+            'Price'     : 116000
+        }
+        headers = {"HTTP_Authorization": self.token}
+        client = Client()
+        response = client.post('/books', json.dumps(body), content_type='application/json', **headers)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(),{"message":"INVALID_DATE"})
+
+    def test_books_and_payment_not_matched_room_and_roomoption_failed(self):
+        body = {
+            'CheckIn'   : '2021-08-24',
+            'CheckOut'  : '2021-08-25',
+            'RoomOption': '대실',
+            'Room'      : 1,
+            'Price'     : 116000
+        }
+        headers = {"HTTP_Authorization": self.token}
+        client = Client()
+        response = client.post('/books', json.dumps(body), content_type='application/json', **headers)
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json(),{"message":"INVALID_RoomOption"})
+    
+    def test_books_and_payment_not_price_failed(self):
+        body = {
+            'CheckIn'   : '2021-08-24',
+            'CheckOut'  : '2021-08-25',
+            'RoomOption': '숙박',
+            'Room'      : 1
+        }
+        headers = {"HTTP_Authorization": self.token}
+        client = Client()
+        response = client.post('/books', json.dumps(body), content_type='application/json', **headers)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(),{"message":"Not_Exist_Price"})
