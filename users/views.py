@@ -6,6 +6,7 @@ from django.http  import JsonResponse
 
 from users.models import User, UserLevel
 from my_settings  import SECRET_KEY
+from users.utils  import login_decorator
 
 class KaKaoSignInView(View):
     def post(self, request):
@@ -49,5 +50,18 @@ class KaKaoSignInView(View):
                 "token"    : token}, status = 200)
         except KeyError:
             return JsonResponse({"message" : "INVALID_TOKEN"}, status = 400)
+
+class ProfileView(View):
+    @login_decorator
+    def get(self, request):
+        user = request.user
+        return JsonResponse({
+            "name"      : user.nickname,
+            "userlevel:": user.userlevel.name,
+            "discount"  : user.userlevel.discount,
+            "point"     : user.point,
+            "email"     : user.email,
+            "agreement" : user.agreement,
+            }, status = 200)
 
 
