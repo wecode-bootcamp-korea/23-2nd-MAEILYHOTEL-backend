@@ -71,3 +71,58 @@ class ProfileGETTest(TestCase):
                         "email"     : self.user.email,
                         "agreement" : self.user.agreement,
                         })
+
+class UserLevelTest(TestCase):
+    def setUp(self):
+        self.userlevel1 = UserLevel.objects.create(
+            name = "silver", discount = 0.1
+        )
+        self.userlevel2 = UserLevel.objects.create(
+            name = "gold", discount = 0.2
+        )
+        self.user = User.objects.create(
+            nickname  = "nickname",
+            email     = "email@email.com",
+            point     = 100000,
+            kakao_id  = "1234567",
+            userlevel = self.userlevel1
+        ) 
+        self.token = jwt.encode({"id" : self.user.id}, SECRET_KEY, algorithm='HS256')
+
+    def tearDown(self):
+        UserLevel.objects.all().delete()
+        User.objects.all().delete()
+
+    def test_userlevelview_patch_success(self):
+        client   = Client()
+        header   = {"HTTP_Authorization" : self.token}
+        request  = {"userlevel" : self.userlevel2.id, "agreement" : "True"}
+        response = client.patch('/users/level', json.dumps(request), **header, content_type='application/json')
+        
+        self.user.refresh_from_db()
+        self.assertEqual(response.json(), 
+            {
+                "id"        : self.user.userlevel.id,
+                "agreement" : self.user.agreement
+            }
+        )
+        self.assertEqual(response.status_code, 200)   
+
+    def test_userlevelview_patch_invalid_request_failed(self):
+        client   = Client()
+        header   = {"HTTP_Authorization" : self.token}
+        request  = {"userlevel" : self.userlevel1.id, "agreement" : "True"}
+        response = client.patch('/users/level', json.dumps(request), **header, content_type='application/json')
+
+        self.assertEqual(response.json(), {"message" : "INVALID_REQUEST"})
+        self.assertEqual(response.status_code, 400)
+
+    def test_userlevelview_patch_key_error_failed(self):
+        client   = Client()
+        header   = {"HTTP_Authorization" : self.token}
+        request  = {"userlevellll" : self.userlevel2.id, "agreement" : "True"}
+        response = client.patch('/users/level', json.dumps(request), **header, content_type='application/json')
+
+        self.assertEqual(response.json(), {"message" : "KEY_ERROR"})
+        self.assertEqual(response.status_code, 400)
+
