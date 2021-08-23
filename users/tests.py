@@ -31,7 +31,7 @@ class KaKaoSignInTest(TestCase):
 
         client = Client()
         mocked_requests.get = MagicMock(return_value = KaKaoResponse())
-        headers = {"Authorization": "가짜 토큰"}
+        headers = {"HTTP_Authorization": "가짜 토큰"}
         response = client.post('/users/kakao', **headers, content_type='application/json')
 
         self.assertEqual(response.status_code, 200)

@@ -1,4 +1,9 @@
 from django.db import models
+from datetime import datetime
+
+WEEK = ['월','화','수','목','금','토','일']
+W1   = ['금','토']
+W2   = ['일','월']
 
 class Category(models.Model):
     name = models.CharField(max_length = 45)
@@ -14,6 +19,15 @@ class Staytype(models.Model):
     latitude    = models.DecimalField(max_digits = 10, decimal_places = 7)
     description = models.TextField()
     facility    = models.ManyToManyField('Facility', through = 'StaytypeFacility', related_name = 'staytypes')
+
+    @classmethod
+    def get_discount_one_price(cls, price, date):
+        price = float(price)
+        if WEEK[date.weekday()] in W1:
+            price = price * 1.3
+        if WEEK[date.weekday()] in W2:
+            price = price * 0.7
+        return price
 
     class Meta:
         db_table = 'staytypes'
