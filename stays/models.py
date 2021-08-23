@@ -1,5 +1,5 @@
 from django.db import models
-from datetime import datetime
+from datetime import datetime, timedelta
 
 WEEK = ['월','화','수','목','금','토','일']
 W1   = ['금','토']
@@ -59,6 +59,24 @@ class Room(models.Model):
     quantity  = models.IntegerField()
     image_url = models.CharField(max_length = 2000)
     people    = models.PositiveIntegerField()
+
+    @classmethod
+    def get_discount_prices(cls, price,check_in,check_out):
+        option_price = float(price)
+        total = 0
+        date_list = [check_in + timedelta(i) for i in range((check_out - check_in).days)]
+        for date in date_list:
+            price = option_price
+            if WEEK[date.weekday()] in W1:
+                price = price * 1.3
+            if WEEK[date.weekday()] in W2:
+                price = price * 0.7
+            total += price
+        avg = total/len(date_list)
+        return {
+            "total": total,
+            "avg"  : round(avg,-2)
+            }
 
     class Meta:
         db_table = 'rooms'
