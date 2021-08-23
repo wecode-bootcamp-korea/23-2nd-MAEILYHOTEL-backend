@@ -337,3 +337,67 @@ class StayCalendarTest(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(),{"message":"INVALID_DATE"})
 
+    
+    def test_stayroomsview_not_input_date_failed(self):
+        client   = Client()
+        response = client.get('/stays/1/rooms')
+        self.assertEqual(response.json(),{"message":"INVALID_DATE"})
+        self.assertEqual(response.status_code, 400)
+
+class StayroomsViewTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        category = Category.objects.create(name="호텔")
+        staytype = Staytype.objects.create(
+            id          = 1,
+            name        = "Ahotel",
+            address     = "testaddress",
+            longitude   = 111.111,
+            latitude    = 111.111,
+            description = "설명입니다",
+            category    = category
+            )
+        facility = Facility.objects.create(name="Facility")
+        StaytypeFacility.objects.create(facility=facility,staytype=staytype)        
+        StaytypeImage.objects.create(image_url="url",staytype=staytype)
+        room = Room.objects.create(id=1, name="Aroom",quantity=10,image_url="url",people=2,staytype=staytype)
+        RoomOption.objects.create(name="숙박", price=10000, check_in=time(15,00) ,check_out=time(11,00), room=room)
+
+    def test_stayroomsview_get_success(self):
+        client   = Client()
+        response = client.get('/stays/1/rooms?CheckIn=2021-08-01&CheckOut=2021-08-02')
+        self.assertEqual(response.json(),
+        {
+            "data": [
+                {
+                    "id": 1,
+                    "name": "Aroom",
+                    "image_url": "url",
+                    "people": 2,
+                    "option": [
+                        {
+                            "type": "숙박",
+                            "check_in": "15:00:00",
+                            "check_out": "11:00:00",
+                            "price": {
+                                "total": 7000.0,
+                                "avg": 7000.0
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+                )
+        self.assertEqual(response.status_code, 200)
+
+    def test_stayroomsview_invalid_id_failed(self):
+        client   = Client()
+        response = client.get('/stays/50/rooms?CheckIn=2021-08-01&CheckOut=2021-08-02')
+        self.assertEqual(response.status_code, 404)
+    
+    def test_stayroomsview_invalid_date_failed(self):
+        client   = Client()
+        response = client.get('/stays/1/rooms?CheckIn=2021-08-01&CheckOut=2021-06-02')
+        self.assertEqual(response.json(),{"message":"INVALID_DATE"})
+        self.assertEqual(response.status_code, 400)

@@ -1,9 +1,10 @@
 from django.views     import View
 from django.http      import JsonResponse
+
 from django.db.models import Q, F, Count, Sum, Min, Case, When, Subquery, OuterRef
 
 from datetime        import datetime, timedelta
-from stays.models    import Staytype, RoomOption
+from stays.models    import Staytype, RoomOption, Room
 from books.models    import Book
 
 class StaytypeListView(View):
@@ -78,6 +79,7 @@ class StayView(View):
         }
         return JsonResponse(data, status=200)
 
+
 class StayCalendarView(View):
     def get(self, request, stay_id):
         if not Staytype.objects.filter(id = stay_id).exists():
@@ -114,3 +116,49 @@ class StayCalendarView(View):
                 'quantity': quantity
                 }
         return JsonResponse({'result' : result}, status=200)
+
+
+class StayRoomsView(View):
+    def get(self, request, stay_id):
+        if not Staytype.objects.filter(id = stay_id).exists():
+            return JsonResponse({"message":"INVALID_ID"}, status=404)
+
+        check_in , check_out = request.GET.get('CheckIn'),request.GET.get('CheckOut')
+
+        if not (check_in and check_out):
+            return JsonResponse({"message":"INVALID_DATE"}, status=400)
+
+        check_in  = datetime.strptime(check_in,"%Y-%m-%d")
+        check_out = datetime.strptime(check_out,"%Y-%m-%d")
+
+        if check_in > check_out:
+            return JsonResponse({"message":"INVALID_DATE"}, status=400)
+
+        q1 = Q(book__check_in__gte=check_in) & Q(book__check_in__lte=check_out)
+        q2 = Q(book__check_out__gte=check_in) & Q(book__check_out__lte=check_out)
+        q3 = Q(book__check_in__lt=check_in,book__check_out__gt=check_out)
+
+        rooms = Room.objects.filter(staytype_id=stay_id).annotate(
+            remain       = F('quantity')-Count('book__id',filter=(q1|q2|q3)),
+            is_available = Case(
+                When(
+                    remain = 0,
+                    then   = False), default = True)).exclude(is_available=False).prefetch_related('roomoption_set')
+        data = [{
+            'id'       : room.id,
+            'name'     : room.name,
+            'image_url': room.image_url,
+            'people'   : room.people,
+            'option'   : [{
+                "type"     : option.name,
+                "check_in" : option.check_in,
+                "check_out": option.check_out,
+                "price"    : Room.get_discount_prices(
+                    price     = option.price,
+                    check_in  = check_in,
+                    check_out = check_out)
+            } for option in room.roomoption_set.all()]
+        } for room in rooms] 
+
+        return JsonResponse({'data':data}, status=200)
+
