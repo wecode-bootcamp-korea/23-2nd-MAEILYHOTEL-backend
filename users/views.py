@@ -1,6 +1,4 @@
 import json, jwt, requests
-
-
 from django.views import View
 from django.http  import JsonResponse
 
@@ -65,3 +63,26 @@ class ProfileView(View):
             }, status = 200)
 
 
+class UserLevelView(View):
+    @login_decorator
+    def patch(self, request):
+        try:
+            data = json.loads(request.body)
+
+            if (data["agreement"] == "True" and data["userlevel"] == 1) or \
+                (data["agreement"] == "False" and data["userlevel"] == 2):
+                return JsonResponse({"message" : "INVALID_REQUEST"}, status = 400)
+
+            request.user.agreement = eval(data["agreement"])
+            request.user.userlevel = UserLevel.objects.get(id=data["userlevel"])
+            request.user.save()
+
+            data = {
+                "id"        : request.user.userlevel.id,
+                "agreement" : request.user.agreement
+            }
+            
+            return JsonResponse(data, status = 200)
+            
+        except:
+            return JsonResponse({"message" : "KEY_ERROR"}, status = 400)
