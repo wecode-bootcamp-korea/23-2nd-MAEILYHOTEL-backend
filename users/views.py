@@ -10,7 +10,7 @@ from my_settings  import SECRET_KEY
 class KaKaoSignInView(View):
     def post(self, request):
         try:
-            access_token = request.headers.get('Authorization')         
+            access_token = request.headers.get('Authorization')    
             profile_response = requests.get(    
                 "https://kapi.kakao.com/v2/user/me",
                 headers = {"Authorization" : f"Bearer {access_token}"},
