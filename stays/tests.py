@@ -187,7 +187,6 @@ class StayCalendarTest(TestCase):
             )
         room = Room.objects.create(name="Aroom",quantity=10,image_url="url",people=2,staytype=staytype)
         RoomOption.objects.create(name="숙박", price=10000, check_in=time(15,00) ,check_out=time(11,00), room=room)
-        cls.stay_id = staytype.id
         
     def tearDown(self):
         RoomOption.objects.all().delete()

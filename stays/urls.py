@@ -1,9 +1,6 @@
 from django.urls import path
 
-
-from stays.views import StaytypeListView, StayView, StayCalendarView 
-
-from stays.views import StaytypeListView, StayView, StayRoomsView
+from stays.views import StaytypeListView, StayView, StayCalendarView, StayRoomsView
 
 urlpatterns = [
     path('', StaytypeListView.as_view()),
