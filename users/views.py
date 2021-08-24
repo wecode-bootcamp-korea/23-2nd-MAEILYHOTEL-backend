@@ -42,12 +42,7 @@ class KaKaoSignInView(View):
             user.nickname = nickname
             user.save()
             token = jwt.encode({"id" : user.id}, SECRET_KEY, algorithm = 'HS256')
-            return JsonResponse({
-                "name"     : user.nickname,
-                "userlevel": user.userlevel.name,
-                "point"    : user.point,
-                "agreement": user.agreement,
-                "token"    : token}, status = 200)
+            return JsonResponse({"token" : token}, status = 200)
         except KeyError:
             return JsonResponse({"message" : "INVALID_TOKEN"}, status = 400)
 
