@@ -21,7 +21,8 @@ class BooksView(View):
             "room_id"  : book.room.id,
             "room_name": book.room.name,
             "check_in" : book.check_in,
-            "check_out": book.check_out
+            "check_out": book.check_out,
+            "status"   : "이용완료" if book.status == True else "이용예정"
         } for book in books]
         return JsonResponse({"data":data}, status=200)
 

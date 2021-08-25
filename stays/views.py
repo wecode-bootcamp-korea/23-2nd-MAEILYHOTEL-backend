@@ -6,6 +6,7 @@ from django.db.models import Q, F, Count, Sum, Min, Case, When, Subquery, OuterR
 from datetime        import datetime, timedelta
 from stays.models    import Staytype, RoomOption, Room
 from books.models    import Book
+from reviews.models  import Review
 
 class StaytypeListView(View):
     def get(self, request):
@@ -62,20 +63,30 @@ class StayView(View):
         if not Staytype.objects.filter(id = stay_id).exists():
             return JsonResponse({"message":"INVALID_ID"}, status=404)
             
-        stay = Staytype.objects.get(id = stay_id)
-        room = RoomOption.objects.filter(name='숙박', room__staytype=stay)
-        data = {
+        stay          = Staytype.objects.get(id = stay_id)
+        room          = RoomOption.objects.filter(name='숙박', room__staytype_id=stay_id).first()
+        random_review = Review.get_random(Review.objects.filter(room__staytype_id=stay_id))
+        data          = {
             "category"   : stay.category.name,
             "name"       : stay.name,
             "images"     : [stayimage.image_url for stayimage in stay.staytypeimage_set.all()],
             "total_rooms": stay.room_set.all().aggregate(total_rooms=Sum('quantity'))['total_rooms'],
             "facilities" : [facility.name for facility in stay.facility.all()],
+            "reviews"    : [{
+                "id"          : random_review.id,
+                "userId"      : random_review.user.nickname,
+                "score"       : random_review.rating,
+                "description" : random_review.comment,
+                "image"       : [image.image_url for image in random_review.reviewimage_set.all()],
+                "created_date": random_review.created_at.date(),
+                "room"        : random_review.room.name
+        } if random_review else None],
             "address"    : stay.address,
             "long"       : stay.longitude,
             "lat"        : stay.latitude,
             "description": stay.description,
-            "check_in"   : room[0].check_in,
-            "check_out"  : room[0].check_out
+            "check_in"   : room.check_in,
+            "check_out"  : room.check_out
         }
         return JsonResponse(data, status=200)
 
