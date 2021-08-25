@@ -8,8 +8,6 @@ from django.test   import TestCase, Client
 from my_settings   import SECRET_KEY
 from datetime      import datetime
 
-# Create your tests here.
-
 class ReviewsgetTest(TestCase):
     def setUp(self):
         userlevel = UserLevel.objects.create(name='silver', discount=0)
@@ -111,3 +109,10 @@ class ReviewsgetTest(TestCase):
         response = client.get('/stays/100/reviews')
         self.assertEqual(response.json(),{'message':'INVALID_ID'})
         self.assertEqual(response.status_code, 404)
+
+    def test_reviewsavailable_get_success(self):
+        client   = Client()
+        headers = {"HTTP_Authorization": self.token}
+        response = client.get('/stays/1/reviewsavailable', **headers, content_type='application/json')
+        self.assertEqual(response.json(),{"is_available":False})
+        self.assertEqual(response.status_code, 200)
