@@ -1,5 +1,3 @@
-import json
-from random import lognormvariate
 from users.utils import login_decorator
 
 from django.views     import View
@@ -16,7 +14,7 @@ class ReviewsView(View):
         if not Staytype.objects.filter(id=stay_id).exists():
             return JsonResponse({"message":"INVALID_ID"}, status=404)
 
-        reviews   = Review.objects.filter(room__staytype_id=stay_id).select_related('room','user').prefetch_related('reviewimage_set').order_by('created_at')[:5]
+        reviews   = Review.objects.filter(room__staytype_id=stay_id).select_related('room','user').prefetch_related('reviewimage_set').order_by('-created_at')[:5]
         avg_score = round(Review.objects.filter(room__staytype_id=stay_id).aggregate(avg_score=Avg('rating'))['avg_score'],2) if reviews else 0
         
         data = [{

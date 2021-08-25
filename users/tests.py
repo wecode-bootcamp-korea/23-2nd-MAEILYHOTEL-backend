@@ -73,17 +73,18 @@ class ProfileGETTest(TestCase):
 class UserLevelTest(TestCase):
     def setUp(self):
         self.userlevel1 = UserLevel.objects.create(
-            name = "silver", discount = 0.1
+            id = 1, name = "silver", discount = 0.1
         )
         self.userlevel2 = UserLevel.objects.create(
-            name = "gold", discount = 0.2
+            id = 2, name = "gold", discount = 0.2
         )
         self.user = User.objects.create(
-            nickname  = "nickname",
-            email     = "email@email.com",
-            point     = 100000,
-            kakao_id  = "1234567",
-            userlevel = self.userlevel1
+            id           = 1,
+            nickname     = "nickname",
+            email        = "email@email.com",
+            point        = 100000,
+            kakao_id     = "1234567",
+            userlevel_id = 1
         ) 
         self.token = jwt.encode({"id" : self.user.id}, SECRET_KEY, algorithm='HS256')
 
@@ -94,7 +95,7 @@ class UserLevelTest(TestCase):
     def test_userlevelview_patch_success(self):
         client   = Client()
         header   = {"HTTP_Authorization" : self.token}
-        request  = {"userlevel" : self.userlevel2.id, "agreement" : "True"}
+        request  = {"userlevel" : 2, "agreement" : "True"}
         response = client.patch('/users/level', json.dumps(request), **header, content_type='application/json')
         
         self.user.refresh_from_db()
@@ -109,7 +110,7 @@ class UserLevelTest(TestCase):
     def test_userlevelview_patch_invalid_request_failed(self):
         client   = Client()
         header   = {"HTTP_Authorization" : self.token}
-        request  = {"userlevel" : self.userlevel1.id, "agreement" : "True"}
+        request  = {"userlevel" : 1, "agreement" : "True"}
         response = client.patch('/users/level', json.dumps(request), **header, content_type='application/json')
 
         self.assertEqual(response.json(), {"message" : "INVALID_REQUEST"})
@@ -118,7 +119,7 @@ class UserLevelTest(TestCase):
     def test_userlevelview_patch_key_error_failed(self):
         client   = Client()
         header   = {"HTTP_Authorization" : self.token}
-        request  = {"userlevellll" : self.userlevel2.id, "agreement" : "True"}
+        request  = {"userlevellll" : 2, "agreement" : "True"}
         response = client.patch('/users/level', json.dumps(request), **header, content_type='application/json')
 
         self.assertEqual(response.json(), {"message" : "KEY_ERROR"})

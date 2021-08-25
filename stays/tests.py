@@ -157,6 +157,7 @@ class StaysViewTest(TestCase):
             "facilities": [
                 "Facility"
             ],
+            "reviews" : [None],
             "address": "testaddress",
             "long": "111.1110000",
             "lat": "111.1110000",

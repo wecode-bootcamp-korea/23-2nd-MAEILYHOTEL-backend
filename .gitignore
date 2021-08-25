@@ -362,3 +362,4 @@ zsdoc/data
 my_settings.py
 stays.csv
 db_uploader.py
+Dockerfile

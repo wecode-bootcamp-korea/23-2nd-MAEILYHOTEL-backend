@@ -1,5 +1,5 @@
 
-import jwt
+import json, jwt
 
 from django.test import TestCase, Client
 
@@ -57,7 +57,7 @@ class BookListsTest(TestCase):
     def test_book_lists_view_get_success(self):
         client   = Client()
         headers  = {"HTTP_Authorization": self.token}
-        response = client.get('/books/list', **headers, content_type='application/json')
+        response = client.get('/books', **headers, content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["data"], [{
                         "stay_id"  : 1,
