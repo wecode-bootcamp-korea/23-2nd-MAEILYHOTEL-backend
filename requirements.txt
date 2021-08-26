@@ -7,3 +7,4 @@ requests==2.26.0
 boto3==1.18.27
 uuid==1.30
 gunicorn==20.1.0
+django-storages==1.11.1

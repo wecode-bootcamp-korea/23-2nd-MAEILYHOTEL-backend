@@ -115,7 +115,7 @@ class StayCalendarView(View):
             price       = min_price
             books_count = 0
             for book in books:
-                if book.check_in < date and book.check_out > date:
+                if book.check_in <= date and book.check_out >= date:
                     books_count += 1
 
             price    = Staytype.get_discount_one_price(price=price, date=date)
