@@ -66,6 +66,9 @@ class BooksView(View):
             )
             
             Payment.objects.create(book = book, amount = price)
+
+            user.point -= price
+            user.save()
             
             return JsonResponse({"message":"SUCCESS"}, status=201)
         except KeyError:
