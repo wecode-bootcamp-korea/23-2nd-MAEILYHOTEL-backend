@@ -51,7 +51,7 @@ class ProfileView(View):
         user = request.user
         return JsonResponse({
             "name"      : user.nickname,
-            "userlevel:": user.userlevel.name,
+            "userlevel" : user.userlevel.name,
             "discount"  : user.userlevel.discount,
             "point"     : user.point,
             "email"     : user.email,
@@ -65,16 +65,19 @@ class UserLevelView(View):
         try:
             data = json.loads(request.body)
 
-            if (data["agreement"] == "True" and data["userlevel"] == 1) or \
-                (data["agreement"] == "False" and data["userlevel"] == 2):
+            if (data["agreement"] == True and data["userlevel"] == "silver") or \
+                (data["agreement"] == False and data["userlevel"] == "gold"):
                 return JsonResponse({"message" : "INVALID_REQUEST"}, status = 400)
 
-            request.user.agreement = eval(data["agreement"])
-            request.user.userlevel = UserLevel.objects.get(id=data["userlevel"])
+            if not UserLevel.objects.filter(name = data["userlevel"]).exists():
+                return JsonResponse({"message" : "INVALID_LEVEL_NAME"}, status = 400)
+
+            request.user.agreement = data["agreement"]
+            request.user.userlevel.name = data["userlevel"]
             request.user.save()
 
             data = {
-                "id"        : request.user.userlevel.id,
+                "userlevel" : request.user.userlevel.name,
                 "agreement" : request.user.agreement
             }
             
