@@ -73,7 +73,7 @@ class UserLevelView(View):
                 return JsonResponse({"message" : "INVALID_LEVEL_NAME"}, status = 400)
 
             request.user.agreement = data["agreement"]
-            request.user.userlevel.name = data["userlevel"]
+            request.user.userlevel = UserLevel.objects.get(name=data["userlevel"])
             request.user.save()
 
             data = {
