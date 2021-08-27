@@ -26,9 +26,8 @@ class CloudStorage:
 
     def upload_file(self, image):
         upload_key = str(uuid.uuid1()).replace("-","") + image.name
-        image_url  = f"https://s3.ap-northeast-2.amazonaws.com/maeilyhotel/{upload_key}"
-      
-        return self.s3_client.upload_fileobj(
+        
+        self.s3_client.upload_fileobj(
             image,
             self.bucket,
             upload_key,
@@ -36,6 +35,7 @@ class CloudStorage:
                 "ContentType": image.content_type
             }
         )
+        return upload_key
 
 class ReviewsView(View):
     @login_decorator
@@ -78,7 +78,8 @@ class ReviewsView(View):
             review.save()        
             
         for image in images:
-            cloud_storage.upload_file(image)
+            upload_key = cloud_storage.upload_file(image)
+            image_url  = f"https://s3.ap-northeast-2.amazonaws.com/maeilyhotel/{upload_key}"
             ReviewImage.objects.create(
                 review    = review,
                 image_url = cloud_storage.upload_file.image_url
